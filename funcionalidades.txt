@@ -1,0 +1,27 @@
+editar
+	-buscar produto
+	-alterar nome
+	-alterar preço
+	-alterar descrição
+	-salvar
+
+saida
+	-Venda de produtos: 
+	-Transferência de produtos:
+	-Devoluções:
+	-Baixa de produtos: 
+
+
+entrada
+	-Reabastecimento
+	-Aumento da quantidade
+
+
+
+relatorio
+
+	-produtos adicionados
+	-produtos editados
+	-resumo do estoque
+	-historico de saida
+	-historico de entrada
