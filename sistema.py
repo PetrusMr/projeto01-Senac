@@ -3,6 +3,7 @@ from customtkinter import *
 from tkinter import ttk
 import sqlite3
 import os
+from time import strftime
 
 produto_selecionado_id = None
 produto_selecionado_id_saida = None
@@ -284,6 +285,8 @@ def switch_saida_relatorio():
     btn_estoque_relatorio.configure(state='normal')
     btn_entrada_relatorio.configure(state='normal')
     btn_saida_relatorio.configure(state='disabled')
+    saida_tree.delete(*saida_tree.get_children()) 
+    carregar_saida()
 
 
 def switch_entrada_relatorio():
@@ -294,6 +297,9 @@ def switch_entrada_relatorio():
     btn_estoque_relatorio.configure(state='normal')
     btn_entrada_relatorio.configure(state='disabled')
     btn_saida_relatorio.configure(state='normal')
+
+    entrada_tree.delete(*entrada_tree.get_children()) 
+    carregar_entrada()
 
 
 def gerar_banco():
@@ -326,13 +332,13 @@ def listar_produtos():
 
 
 def carregar_estoque():
-    # Conecta ao banco de dados
+    
     banco = sqlite3.connect('sistema_estoque.db')
     cursor = banco.cursor()
     
-    # Limpa o Treeview antes de i
     
-    # Consulta os dados da tabela 'produtos'
+    
+   
     cursor.execute("SELECT nome, quantidade, preco, descricao FROM produtos")
     produtos = cursor.fetchall()
     
@@ -340,27 +346,10 @@ def carregar_estoque():
     for produto in produtos:
         estoque_tree.insert('', 'end', values=produto,)
     
-    # Fecha a conexão com o banco
+    
     banco.close()
 
 
-def carregar_saida():
-    # Conecta ao banco de dados
-    banco = sqlite3.connect('sistema_estoque.db')
-    cursor = banco.cursor()
-    
-    # Limpa o Treeview antes de i
-    
-    # Consulta os dados da tabela 'produtos'
-    cursor.execute("SELECT nome, quantidade, preco, descricao FROM produtos")
-    produtos = cursor.fetchall()
-    
-    # Insere os dados no Treeview
-    for produto in produtos:
-        estoque_tree.insert('', 'end', values=produto,)
-    
-    # Fecha a conexão com o banco
-    banco.close()
 
 
 def switch_relatorio():
@@ -564,6 +553,7 @@ item_saida = []
 quantidade_saida  = []
 
 quantidade_saida_antiga = []
+
 def adicionar_item_saida_func():
     global linha, quantidade_saida, item_saida, quantidade_saida_antiga
 
@@ -578,6 +568,7 @@ def adicionar_item_saida_func():
         quantidade_saida.append(entry_qntd_tirar_saida.get())
         quantidade_saida_antiga.append(entry_qntd_prod_saida.get())
 
+
         try:
             label = CTkLabel(scroll_frame_saida_prod, text=item, anchor="w")
             label.grid(row=linha, column=0, pady=5, padx=5)
@@ -588,13 +579,13 @@ def adicionar_item_saida_func():
                 command=lambda: delete_itens(label, lixeira, item)
             )
             lixeira.grid(row=linha, column=1, pady=5, padx=100, sticky='e')
-            print(item_saida)
-            print(quantidade_saida)
+
 
 
 
         except ValueError:
             return
+    entry_qntd_prod_saida.configure(state='normal')
 
     # entry_nome_prod_saida.configure(state='normal')
     # entry_qntd_prod_saida.configure (state='normal')
@@ -609,26 +600,46 @@ def adicionar_item_saida_func():
 def salvar_alteracao_saida():
     global item_saida, quantidade_saida
     
+    banco_saida = sqlite3.connect('relatorio_saida.db')
+    cursor_saida = banco_saida.cursor()
+    cursor_saida.execute("""CREATE TABLE IF NOT EXISTS produtos ( nome text not null , quantidade int not null , data_hora text)""")
+    banco_saida.commit()
+    banco_saida.close()
+
     banco = sqlite3.connect('sistema_estoque.db')
     cursor = banco.cursor()
+
+    banco_saida = sqlite3.connect('relatorio_saida.db')
+    cursor_saida = banco_saida.cursor()
     
     for index, item in enumerate(item_saida):
         item = str(item[0])
-        quantidade_antiga = int(entry_qntd_prod_saida.get())
+
 
         quantidade = int(quantidade_saida[index])
+        quantidade_antiga = int(quantidade_saida_antiga[index])
+
         if quantidade > quantidade_antiga or quantidade == 0:
             return
         else:
-            quantidade = quantidade_antiga - quantidade
-        
-            cursor.execute("UPDATE produtos SET quantidade = ? WHERE nome = ?", (quantidade, item))
-    
+            quantidade_final = quantidade_antiga - quantidade
+
+            h = strftime("%d/%m/%Y--%H:%M:%S",)
+
+            cursor.execute("UPDATE produtos SET quantidade = ? WHERE nome = ?", (quantidade_final, item))
+            cursor_saida.execute("INSERT INTO produtos (nome, quantidade, data_hora) VALUES (?, ?, ?)", (item, quantidade,h ))
+
     banco.commit()
     banco.close()
+    banco_saida.commit()
+    banco_saida.close()
+
     item_saida.clear()
     quantidade_saida.clear()
     quantidade_saida_antiga.clear()
+
+    for widget in scroll_frame_saida_prod.winfo_children():
+        widget.destroy()
 
 def cancelar_saida():
     for widget in scroll_frame_saida_prod.winfo_children():
@@ -763,8 +774,7 @@ def adicionar_item_entrada_func():
                 command=lambda: delete_itens_entrada(label, lixeira, item)
             )
             lixeira.grid(row=linha_entrada, column=1, pady=5, padx=100, sticky='e')
-            print(item_entrada)
-            print(quantidade_entrada)
+
 
 
 
@@ -853,9 +863,24 @@ def filtro_entrada(event):
 
 def salvar_alteracao_entrada():
     global item_entrada, quantidade_entrada, quantidade_entrada_antiga
+
+
+    banco_entrada = sqlite3.connect('relatorio_entrada.db')
+    cursor_entrada = banco_entrada.cursor()
+    cursor_entrada.execute("""CREATE TABLE IF NOT EXISTS produtos ( nome text not null , quantidade int not null , data_hora text)""")
+    banco_entrada.commit()
+    banco_entrada.close()
+
+    banco_entrada = sqlite3.connect('relatorio_entrada.db')
+    cursor_entrada = banco_entrada.cursor()
+    
     
     banco = sqlite3.connect('sistema_estoque.db')
     cursor = banco.cursor()
+
+    banco_entrada = sqlite3.connect('relatorio_entrada.db')
+    cursor_entrada = banco_entrada.cursor()
+
     
     for index, item in enumerate(item_entrada):
         item = str(item[0])
@@ -864,26 +889,25 @@ def salvar_alteracao_entrada():
         quantidade = int(quantidade_entrada[index])
         quantidade_antiga = int(quantidade_entrada_antiga[index])
 
-        quantidade = quantidade_antiga + quantidade
+        quantidade_final = quantidade_antiga + quantidade
         
-        cursor.execute("UPDATE produtos SET quantidade = ? WHERE nome = ?", (quantidade, item))
+        h = strftime("%d/%m/%Y--%H:%M:%S",)
+        cursor.execute("UPDATE produtos SET quantidade = ? WHERE nome = ?", (quantidade_final, item))
+        cursor_entrada.execute("INSERT INTO produtos (nome, quantidade, data_hora) VALUES (?, ?, ?)", (item, quantidade,h ))
     
     banco.commit()
     banco.close()
+    banco_entrada.commit()
+    banco_entrada.close()
+
     item_entrada.clear()
     quantidade_entrada.clear()
+    quantidade_entrada_antiga.clear()
+
     for widget in scroll_frame_entrada_prod.winfo_children():
         widget.destroy()
 
-    banco = sqlite3.connect('relatorio_entrada.db')
-    cursor = banco.cursor()
-    cursor.execute("""CREATE TABLE IF NOT EXISTS produtos ( nome text not null , quantidade int not null , data_hora text)""")
-    banco.commit()
-    banco.close()
 
-    banco = sqlite3.connect('relatorio_entrada.db')
-    cursor = banco.cursor()
-    
 
 def cancelar_entrada():
     for widget in scroll_frame_entrada_prod.winfo_children():
@@ -892,7 +916,32 @@ def cancelar_entrada():
     item_entrada.clear()
     quantidade_entrada.clear()
 
+def carregar_saida():
+    banco = sqlite3.connect('relatorio_saida.db')
+    cursor = banco.cursor()
 
+
+    cursor.execute('SELECT nome, quantidade, data_hora FROM produtos')
+    produtos = cursor.fetchall()
+
+    for produto in produtos:
+        saida_tree.insert('', 'end', values=produto)
+
+    banco.close()
+
+def carregar_entrada():
+    banco = sqlite3.connect('relatorio_entrada.db')
+    cursor = banco.cursor()
+
+
+    cursor.execute('SELECT nome, quantidade, data_hora FROM produtos' )
+    produtos = cursor.fetchall()
+
+
+    for produto in produtos:
+        entrada_tree.insert('', 'end', values=produto)
+
+    banco.close()
 
 root = CTk()
 root.geometry('840x400')
