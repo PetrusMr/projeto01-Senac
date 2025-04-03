@@ -563,8 +563,9 @@ def delete_itens(label, button, item):
 item_saida = []
 quantidade_saida  = []
 
+quantidade_saida_antiga = []
 def adicionar_item_saida_func():
-    global linha, quantidade_saida, item_saida
+    global linha, quantidade_saida, item_saida, quantidade_saida_antiga
 
     entry_nome_prod_saida.configure(state='normal')
 
@@ -575,6 +576,7 @@ def adicionar_item_saida_func():
     if item not in item_saida:
         item_saida.append(item)
         quantidade_saida.append(entry_qntd_tirar_saida.get())
+        quantidade_saida_antiga.append(entry_qntd_prod_saida.get())
 
         try:
             label = CTkLabel(scroll_frame_saida_prod, text=item, anchor="w")
@@ -612,13 +614,13 @@ def salvar_alteracao_saida():
     
     for index, item in enumerate(item_saida):
         item = str(item[0])
-        quantidade_atual = int(entry_qntd_prod_saida.get())
+        quantidade_antiga = int(entry_qntd_prod_saida.get())
 
         quantidade = int(quantidade_saida[index])
-        if quantidade > quantidade_atual or quantidade == 0:
+        if quantidade > quantidade_antiga or quantidade == 0:
             return
         else:
-            quantidade = quantidade_atual - quantidade
+            quantidade = quantidade_antiga - quantidade
         
             cursor.execute("UPDATE produtos SET quantidade = ? WHERE nome = ?", (quantidade, item))
     
@@ -626,6 +628,7 @@ def salvar_alteracao_saida():
     banco.close()
     item_saida.clear()
     quantidade_saida.clear()
+    quantidade_saida_antiga.clear()
 
 def cancelar_saida():
     for widget in scroll_frame_saida_prod.winfo_children():
@@ -719,6 +722,7 @@ def itens_laterais_entrada():
         checkbox.pack(pady=5, padx=10, fill="x")
         checkboxes[produto_id] = checkbox
 
+
 def delete_itens_entrada(label, button, item):
 
     if item in item_saida:
@@ -733,9 +737,9 @@ def delete_itens_entrada(label, button, item):
     button.grid_forget()
 
 
-
+quantidade_entrada_antiga = []
 def adicionar_item_entrada_func():
-    global linha_entrada, quantidade_entrada, item_entrada
+    global linha_entrada, quantidade_entrada, item_entrada, quantidade_entrada_antiga
 
     entry_nomeprod_entrada.configure(state='normal')
 
@@ -746,6 +750,8 @@ def adicionar_item_entrada_func():
     if item not in item_entrada:
         item_entrada.append(item)
         quantidade_entrada.append(entry_qntd_tirar_entrada.get())
+        quantidade_entrada_antiga.append(entry_qntd_prod_entrada.get())
+
 
         try:
             label = CTkLabel(scroll_frame_entrada_prod, text=item, anchor="w")
@@ -844,19 +850,21 @@ def filtro_entrada(event):
 
     banco.close()
 
+
 def salvar_alteracao_entrada():
-    global item_entrada, quantidade_entrada
+    global item_entrada, quantidade_entrada, quantidade_entrada_antiga
     
     banco = sqlite3.connect('sistema_estoque.db')
     cursor = banco.cursor()
     
     for index, item in enumerate(item_entrada):
         item = str(item[0])
-        quantidade_atual = int(entry_qntd_prod_entrada.get())
+        
 
         quantidade = int(quantidade_entrada[index])
+        quantidade_antiga = int(quantidade_entrada_antiga[index])
 
-        quantidade = quantidade_atual + quantidade
+        quantidade = quantidade_antiga + quantidade
         
         cursor.execute("UPDATE produtos SET quantidade = ? WHERE nome = ?", (quantidade, item))
     
@@ -864,6 +872,18 @@ def salvar_alteracao_entrada():
     banco.close()
     item_entrada.clear()
     quantidade_entrada.clear()
+    for widget in scroll_frame_entrada_prod.winfo_children():
+        widget.destroy()
+
+    banco = sqlite3.connect('relatorio_entrada.db')
+    cursor = banco.cursor()
+    cursor.execute("""CREATE TABLE IF NOT EXISTS produtos ( nome text not null , quantidade int not null , data_hora text)""")
+    banco.commit()
+    banco.close()
+
+    banco = sqlite3.connect('relatorio_entrada.db')
+    cursor = banco.cursor()
+    
 
 def cancelar_entrada():
     for widget in scroll_frame_entrada_prod.winfo_children():
@@ -877,7 +897,7 @@ def cancelar_entrada():
 root = CTk()
 root.geometry('840x400')
 root.title('Sistema de gerenciamento')
-# gerar_banco()
+gerar_banco()
 
 # style do tree view
 style = ttk.Style(master=root)
