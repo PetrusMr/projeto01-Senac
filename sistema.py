@@ -285,7 +285,10 @@ def switch_saida_relatorio():
     btn_estoque_relatorio.configure(state='normal')
     btn_entrada_relatorio.configure(state='normal')
     btn_saida_relatorio.configure(state='disabled')
-    saida_tree.delete(*saida_tree.get_children()) 
+    saida_tree.delete(*saida_tree.get_children())
+    entry_busca_relatorio_entrada.grid_forget()
+    entry_busca_relatorio_saida.grid(row=1, column = 0, padx=30, sticky  = 'w')
+    entry_busca_relatorio_estoque.grid_forget()
     carregar_saida()
 
 
@@ -299,6 +302,9 @@ def switch_entrada_relatorio():
     btn_saida_relatorio.configure(state='normal')
 
     entrada_tree.delete(*entrada_tree.get_children()) 
+    entry_busca_relatorio_entrada.grid(row=1, column = 0, padx=30, sticky  = 'w')
+    entry_busca_relatorio_saida.grid_forget()
+    entry_busca_relatorio_estoque.grid_forget()
     carregar_entrada()
 
 
@@ -368,6 +374,10 @@ def switch_relatorio():
     entrada_tree.grid_forget()
     
     estoque_tree.delete(*estoque_tree.get_children())   
+
+    entry_busca_relatorio_entrada.grid_forget()
+    entry_busca_relatorio_saida.grid_forget()
+    entry_busca_relatorio_estoque.grid(row=1, column = 0, padx=30, sticky  = 'w')
 
     carregar_estoque()
 
@@ -490,6 +500,7 @@ def filtro_saida(event):
         for pid, checkbox in checkboxes.items():
             if pid != produto_id and checkbox.winfo_exists():
                 checkbox.deselect() 
+        
         preencher_campos_saida()
     
 
@@ -586,16 +597,13 @@ def adicionar_item_saida_func():
         except ValueError:
             return
     entry_qntd_prod_saida.configure(state='normal')
+    entry_qntd_prod_saida.delete(0, 'end')
+    entry_nome_prod_saida.configure(state='normal')
+    entry_nome_prod_saida.delete(0, 'end')
+    entry_qntd_tirar_saida.delete(0, 'end')
 
-    # entry_nome_prod_saida.configure(state='normal')
-    # entry_qntd_prod_saida.configure (state='normal')
-
-    # entry_nome_prod_saida.delete(0, 'end')
-    # entry_qntd_tirar_saida.delete(0, 'end')
-    # entry_qntd_prod_saida.delete(0, 'end')
-    
-    # entry_nome_prod_saida.configure(state='disabled')
-    # entry_qntd_prod_saida.configure(state='disabled')
+    entry_qntd_prod_saida.configure(state='disabled')
+    entry_nome_prod_saida.configure(state='disabled')
 
 def salvar_alteracao_saida():
     global item_saida, quantidade_saida
@@ -624,7 +632,7 @@ def salvar_alteracao_saida():
         else:
             quantidade_final = quantidade_antiga - quantidade
 
-            h = strftime("%d/%m/%Y--%H:%M:%S",)
+            h = strftime("%d/%m/%Y - %H:%M:%S",)
 
             cursor.execute("UPDATE produtos SET quantidade = ? WHERE nome = ?", (quantidade_final, item))
             cursor_saida.execute("INSERT INTO produtos (nome, quantidade, data_hora) VALUES (?, ?, ?)", (item, quantidade,h ))
@@ -782,14 +790,14 @@ def adicionar_item_entrada_func():
             return
         
     entry_qntd_prod_entrada.configure(state='normal')
-    
-    
-    # entry_qntd_prod_entrada.delete(0, 'end')
-    # entry_nomeprod_entrada.delete(0, 'end')
-    # entry_qntd_tirar_entrada.delete(0, 'end')
-    
-    # entry_qntd_prod_entrada.configure(state='disabled')
-    # entry_nomeprod_entrada.configure(state='disabled')
+    entry_qntd_prod_entrada.delete(0, 'end')
+    entry_nomeprod_entrada.configure(state='normal')
+    entry_nomeprod_entrada.delete(0, 'end')
+    entry_qntd_tirar_entrada.delete(0, 'end')
+
+    entry_qntd_prod_entrada.configure(state='disabled')
+    entry_nomeprod_entrada.configure(state='disabled')
+
     
 
 def switch_entrada():
@@ -891,7 +899,7 @@ def salvar_alteracao_entrada():
 
         quantidade_final = quantidade_antiga + quantidade
         
-        h = strftime("%d/%m/%Y--%H:%M:%S",)
+        h = strftime("%d/%m/%Y - %H:%M:%S",)
         cursor.execute("UPDATE produtos SET quantidade = ? WHERE nome = ?", (quantidade_final, item))
         cursor_entrada.execute("INSERT INTO produtos (nome, quantidade, data_hora) VALUES (?, ?, ?)", (item, quantidade,h ))
     
@@ -942,6 +950,55 @@ def carregar_entrada():
         entrada_tree.insert('', 'end', values=produto)
 
     banco.close()
+
+
+def filtro_relatorio_estoque(event):
+    filtro = entry_busca_relatorio_estoque.get()
+    if filtro == '':
+        estoque_tree.delete(*estoque_tree.get_children()) 
+        carregar_estoque()
+        return
+
+    for item in estoque_tree.get_children():
+        if filtro.lower() in str(estoque_tree.item(item)['values']).lower():
+            estoque_tree.selection_set(item)
+        else:
+            estoque_tree.selection_remove(item)
+            estoque_tree.delete(item)
+
+
+def filtro_relatorio_entrada(event):
+    filtro = entry_busca_relatorio_entrada.get()
+    if filtro == '':
+        entrada_tree.delete(*entrada_tree.get_children()) 
+        carregar_entrada()
+        return
+
+    for item in entrada_tree.get_children():
+        if filtro.lower() in str(entrada_tree.item(item)['values']).lower():
+            entrada_tree.selection_set(item)
+        else:
+            entrada_tree.selection_remove(item)
+            entrada_tree.delete(item)
+
+
+
+def filtro_relatorio_saida(event):
+    filtro = entry_busca_relatorio_saida.get()
+    if filtro == '':
+        saida_tree.delete(*saida_tree.get_children()) 
+        carregar_saida()
+        return
+
+    for item in saida_tree.get_children():
+        if filtro.lower() in str(saida_tree.item(item)['values']).lower():
+            saida_tree.selection_set(item)
+        else:
+            saida_tree.selection_remove(item)
+            saida_tree.delete(item)
+
+
+
 
 root = CTk()
 root.geometry('840x400')
@@ -1179,6 +1236,16 @@ label_Relatorio.grid(row = 0, column = 0, pady=5,padx = 20 , sticky='e')
 # entry
 entry_busca_relatorio_estoque = CTkEntry(master=frame_relatorio, placeholder_text='Buscar Produto', width=200, border_color='#a399f9', corner_radius=32)
 entry_busca_relatorio_estoque.grid(row=1, column = 0, padx=30, sticky  = 'w')
+entry_busca_relatorio_estoque.bind("<KeyRelease>", filtro_relatorio_estoque)
+
+entry_busca_relatorio_entrada = CTkEntry(master=frame_relatorio, placeholder_text='Buscar Produto', width=200, border_color='#a399f9', corner_radius=32)
+entry_busca_relatorio_entrada.grid(row=1, column = 0, padx=30, sticky  = 'w')
+entry_busca_relatorio_entrada.bind("<KeyRelease>", filtro_relatorio_entrada)
+
+entry_busca_relatorio_saida = CTkEntry(master=frame_relatorio, placeholder_text='Buscar Produto', width=200, border_color='#a399f9', corner_radius=32)
+entry_busca_relatorio_saida.grid(row=1, column = 0, padx=30, sticky  = 'w')
+entry_busca_relatorio_saida.bind("<KeyRelease>", filtro_relatorio_saida)
+
 
 
 # treeview_estoque
@@ -1196,13 +1263,13 @@ estoque_tree.heading('descricao', text='descricao')
 estoque_tree.column('nome',width=110 )
 estoque_tree.column('quantidade',width=110 , anchor=CENTER )
 estoque_tree.column('preço',width=110 , anchor=CENTER )
-estoque_tree.column('descricao',width=110 )
+estoque_tree.column('descricao',width=180 )
 
 
 # treeview saida
 columns_saida = ('nome', 'quantidade', 'Data/hora')
 
-saida_tree = ttk.Treeview(master=frame_relatorio, columns=columns_saida, show='headings', )
+saida_tree = ttk.Treeview(master=frame_relatorio, columns=columns_saida, show='headings',  )
 
 saida_tree.heading('nome', text='nome')
 saida_tree.heading('quantidade', text='quantidade')
@@ -1211,7 +1278,7 @@ saida_tree.heading('Data/hora', text='Data/hora')
 
 saida_tree.column('nome',width=110 )
 saida_tree.column('quantidade',width=110  , anchor=CENTER)
-saida_tree.column('Data/hora',width=110  , anchor=CENTER)
+saida_tree.column('Data/hora',width=180  , anchor=CENTER)
 
 
 # treeview entrada
@@ -1229,7 +1296,7 @@ entrada_tree.heading('Data/hora', text='Data/hora')
 
 entrada_tree.column('nome',width=110  )
 entrada_tree.column('quantidade',width=110  , anchor=CENTER)
-entrada_tree.column('Data/hora',width=110  , anchor=CENTER)
+entrada_tree.column('Data/hora',width=180  , anchor=CENTER)
 
 # button
 btn_exportar_relatorio = CTkButton(master=frame_relatorio, text='Exportar', width=70, fg_color="#8684EB", corner_radius=32, hover_color='#6e67a6', text_color='black', command=export)
