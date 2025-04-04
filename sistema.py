@@ -12,7 +12,7 @@ produto_selecionado_id_entrada = None
 
 #import image
 file_path = os.path.dirname(os.path.realpath(__file__))
-#image1 = CTkImage(Image.open(fp= "C:/Users/970548/OneDrive - SENAC em Minas - EDU/Documentos/Senac/senac/UC5/projeto01/lixeira.png"), size=(25,25))
+
 image = Image.open(file_path + "/lixeira.png")
 image = image.resize((25,25))
 image1 = CTkImage(image)
